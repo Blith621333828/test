@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spotify Player</title>
+    <style>
+        body {
+            background-color: #36393F;
+            color: white;
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .spotify-card {
+            background: rgba(0, 0, 0, 0.6); /* Przezroczystość */
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .spotify-header img {
+            border-radius: 18px;
+            height: 110px;
+        }
+        .spotify-header-info a {
+            color: white;
+            text-decoration: none;
+        }
+        .spotify-header-info a:hover {
+            text-decoration: underline;
+        }
+        .spotify-pasek {
+            margin-top: 10px;
+        }
+        #player-progress {
+            background-color: rgb(238, 238, 238);
+            height: 10px;
+            border-radius: 10px;
+            transition: width 0.2s ease;
+        }
+    </style>
+</head>
+<body>
+    <div class="spotify-card">
+        <div class="spotify-header">
+            <img id="player-album-art" src="https://i.scdn.co/image/ab67616d00001e02891c4e0613b63f580b01cf86" alt="Album Art">
+            <div class="spotify-header-info">
+                <div><a id="player-song" href="https://open.spotify.com/track/4EhoDKYSHeU2yOboSCo6a9" target="_blank"><strong>ON THE BLOCK</strong></a></div>
+                <div><a id="player-artist" href="https://open.spotify.com/artist/0kh9Gvy9lGZsq84x7I37DC" target="_blank">w wykonaniu <strong>Beteo</strong></a></div>
+                <div><a id="player-album" href="https://open.spotify.com/album/1Shvu0oUTSFDOcKvwWdlYo" target="_blank">w <strong>FREE AGENT</strong></a></div>
+            </div>
+        </div>
+        <div class="spotify-pasek">
+            <div id="player-current" style="font-size: 10px;color: #eee;position: relative; float: right; top: -2em; font-weight: bold">02:20</div>
+            <div id="player-progress-back" style="height: 11px; border-radius: 10px"></div>
+            <div id="player-progress" style="width: 90.9091%;"></div>
+            <div id="player-end" style="font-size: 10px;color: #eee;position: relative; float: right; top: -2em; font-weight: bold">02:34</div> 
+        </div>
+    </div>
+    <script>
+        // Funkcja do aktualizacji stanu odtwarzacza
+        function updatePlayer() {
+            const accessToken = new URLSearchParams(window.location.search).get('access_token');
+            if (accessToken) {
+                fetch(`/get-now-playing?access_token=${accessToken}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.error) {
+                            document.getElementById("player-song").innerHTML = "Blith w tej chwili niczego nie słucha :o";
+                            document.getElementById("player-artist").innerHTML = "  ";
+                            document.getElementById("player-album-art").setAttribute("src", "https://logospng.org/download/spotify/logo-spotify-icon-4096.png");
+                            return;
+                        }
+                        document.getElementById("player-song").innerHTML = "<strong>" + data.item.name + "</strong>";
+                        document.getElementById("player-artist").innerHTML = "w wykonaniu " + "<strong>" + data.item.artists[0].name + "</strong>";
+                        document.getElementById("player-album").innerHTML = "w " + "<strong>" + data.item.album.name + "</strong>";
+                        document.getElementById("player-album-art").setAttribute("src", data.item.album.images[1].url);
+                        
+                        // Aktualizacja paska postępu
+                        const progressSeconds = Math.ceil(data.progress_ms / 1000);
+                        const totalSeconds = Math.ceil(data.item.duration_ms / 1000);
+                        document.getElementById("player-current").innerHTML = formatTime(progressSeconds);
+                        document.getElementById("player-end").innerHTML = formatTime(totalSeconds);
+                        document.getElementById("player-progress").style.width = `${(progressSeconds * 100) / totalSeconds}%`;
+
+                        function formatTime(seconds) {
+                            const minutes = Math.floor(seconds / 60);
+                            const secs = seconds % 60;
+                            return `${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching data:', error);
+                    });
+            } else {
+                document.getElementById("player-song").innerHTML = "Blith w tej chwili niczego nie słucha :o";
+                document.getElementById("player-artist").innerHTML = "  ";
+                document.getElementById("player-album-art").setAttribute("src", "https://logospng.org/download/spotify/logo-spotify-icon-4096.png");
+            }
+        }
+
+        // Wywołaj funkcję aktualizacji po załadowaniu strony
+        window.onload = updatePlayer;
+    </script>
+</body>
+</html>
